@@ -15,7 +15,7 @@ for video in video_devices:
 while(True):
 
     key = cv2.waitKey(1)
-    if key == ord('q'):
+    if key & 255 == ord('q'):
         break
 
     vid = dict()
