@@ -1,8 +1,16 @@
 import numpy as np
 import cv2
 
-cap0 = cv2.VideoCapture(0)
-cap1 = cv2.VideoCapture(1)
+import os
+
+devices = os.listdir('/dev/')
+video_devices = [int(d[-1]) for d in devices if d.startswith('video')]
+
+cv_cams = []
+for video in video_devices:
+    cam = cv2.VideoCapture(video)
+    if cam.isOpened():
+        cv_cams.append(cam)
 
 while(True):
 
@@ -10,15 +18,18 @@ while(True):
     if key == ord('q'):
         break
 
-    ret, frame0 = cap0.read()
-    ret, frame1 = cap1.read()
+    vid = dict()
+    for idx, cam in enumerate(cv_cams):
+        ret, frame = cam.read()
 
-    vid0 = cv2.cvtColor(frame0, cv2.COLOR_RGBA2RGB)
-    vid1 = cv2.cvtColor(frame1, cv2.COLOR_RGBA2RGB)
+        if ret:
+            vid[cam] = frame
+            cv2.imshow(
+                'frame{}'.format(idx),
+                cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB),
+            )
 
-    cv2.imshow('frame0', vid0)
-    cv2.imshow('frame1', vid1)
+for video in video_devices:
+    video.release()
 
-cap0.release()
-cap1.release()
 cv2.destroyAllWindows()
