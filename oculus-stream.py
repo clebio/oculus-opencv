@@ -6,6 +6,11 @@ Will display on whichever monitor is current when run.
 
 Requires OpenCV 2.4.9, numpy 1.8.1 and ovrsdk
 
+Some parameter groups that seem to work ok:
+  fxL=330, fxR=330, cxL=320, cxR=320, xo=0, yo=10, xo2=-80, yo2=60
+  fxL=350, fxR=350, cxL=210, cxR=210, xo=-20, yo=40, xo2=-50, yo2=-10
+  fxL=330, fxR=330, cxL=320, cxR=320, xo=0, yo=10, xo2=-80, yo2=60
+
 Based directly off of: http://www.argondesign.com/news/2014/aug/26/augmented-reality-oculus-rift/
 """
 
@@ -74,7 +79,21 @@ def translate(image, x, y):
     image_translate = cv2.warpAffine(image, matrix, (cols, rows))
     return image_translate
 
-if __name__ == '__main__':
+def print_params():
+    p = Parameters
+    print(("fxL={fxl}, fxR={fxr}, cxL={cxl}, cxR={cxr}, "
+           "xo={xo}, yo={yo}, xo2={xo2}, yo2={yo2}").format(
+               fxl=p.fxL,
+               fxr=p.fxR,
+               cxl=p.cxL,
+               cxr=p.cxR,
+               xo=p.xo,
+               yo=p.yo,
+               xo2=p.xo2,
+               yo2=p.yo2,
+           ))
+
+class Parameters():
     #Matrix coefficients for left eye barrel effect
     fxL = 300
     fyL = 200
@@ -105,6 +124,9 @@ if __name__ == '__main__':
     cropXR = 200
     cropYL = 0
     cropYR = 0
+
+def run():
+    p = Parameters
 
     key_mappings = dict(
         fxL=('f', 's'),
@@ -137,7 +159,7 @@ if __name__ == '__main__':
     hmd = ovr.ovrHmd_Create(0)
     try:
         hmd.contents
-    except ValueError as _ex:
+    except ValueError as _:
         print('Failed to initialize Oculus, is it connected?')
         sys.exit()
 
@@ -150,13 +172,13 @@ if __name__ == '__main__':
     )
 
     # The device dimensions; should we use them for width/height?
-    size0 = ovr.ovrHmd_GetFovTextureSize(
+    _ = ovr.ovrHmd_GetFovTextureSize(
         hmd,
         ovr.ovrEye_Left,
         hmdDesc.MaxEyeFov[0],
         1.0
     )
-    size1 = ovr.ovrHmd_GetFovTextureSize(
+    _ = ovr.ovrHmd_GetFovTextureSize(
         hmd,
         ovr.ovrEye_Left,
         hmdDesc.MaxEyeFov[1],
@@ -171,63 +193,69 @@ if __name__ == '__main__':
     )
 
     while True:
-        x, fraL = cL.read()
-        x, fraR = cR.read()
-        width, height = 720, 480 #, t = fraL.shape
-        matrixL = create_distortion_matrix(fxL, cxL, fyL, cyL)
-        matrixR = create_distortion_matrix(fxR, cxR, fyR, cyR)
-        #translates, crops and distorts image
-        fraLT = translate(fraL, xL+xo, yL+yo)
-        fraRT = translate(fraR, xR+xo, yR+yo)
-        fraLd = transform(fraLT, matrixL)
-        fraRd = transform(fraRT, matrixR)
-        fraLT2 = translate(fraLd, xo2, yo2)
-        fraRT2 = translate(fraRd, xo2, yo2)
-        fraLs = crop(
-            fraLT2, cropXL, cropXR, cropYL, cropYR, width, height
-        )
-        fraRs = crop(
-            fraRT2, cropXL, cropXR, cropYL, cropYR, width, height
-        )
+        _, left_frame = cL.read()
+        _, right_frame = cR.read()
+        width, height = 720, 480 #, t = left_frame.shape
+        matrixL = create_distortion_matrix(p.fxL, p.cxL, p.fyL, p.cyL)
+        matrixR = create_distortion_matrix(p.fxR, p.cxR, p.fyR, p.cyR)
 
-        fraCom = join_images(fraLs, fraRs)
-        cv2.imshow('vid', fraCom)
+        #translates, crops and distorts image
+        left_frame = translate(left_frame, p.xL+p.xo, p.yL+p.yo)
+        right_frame = translate(right_frame, p.xR+p.xo, p.yR+p.yo)
+        left_frame = transform(left_frame, matrixL)
+        right_frame = transform(right_frame, matrixR)
+        left_frame = translate(left_frame, p.xo2, p.yo2)
+        right_frame = translate(right_frame, p.xo2, p.yo2)
+
+        left_frame = crop(
+            left_frame,
+            p.cropXL,
+            p.cropXR,
+            p.cropYL,
+            p.cropYR,
+            width,
+            height,
+        )
+        right_frame = crop(
+            right_frame,
+            p.cropXL,
+            p.cropXR,
+            p.cropYL,
+            p.cropYR,
+            width,
+            height,
+        )
+        composite_frame = join_images(left_frame, right_frame)
+
+        cv2.imshow('vid', composite_frame)
 
         key = cv2.waitKey(1) & 255
         if key == ord('q'):
             cv2.destroyAllWindows()
             cR.release()
             cL.release()
-            print(("fxL={fxl}, fxR={fxr}, cxL={cxl}, cxR={cxr}, "
-                   "xo={xo}, yo={yo}, xo2={xo2}, yo2={yo2}").format(
-                       fxl=fxL,
-                       fxr=fxR,
-                       cxl=cxL,
-                       cxr=cxR,
-                       xo=xo,
-                       yo=yo,
-                       xo2=xo2,
-                       yo2=yo2,
-                   ))
+            print_params()
             break
+
+        elif key == ord('p'):
+            print_params()
 
         for metric, tup in key_mappings.iteritems():
             _add = tup[0]
             _sub = tup[1]
             if key == ord(_add):
-                locals()[metric] += 10
+                setattr(p, metric, getattr(p, metric) + 10)
             if key == ord(_sub):
-                locals()[metric] -= 10
+                setattr(p, metric, getattr(p, metric) - 10)
 
         # Don't let these go negative
         for metric in ['cropXL', 'cropYL', 'cropXR', 'cropYR']:
-            if locals()[metric] < 0:
+            p_m = getattr(p, metric)
+            if p_m < 0:
                 print("Attempting to set {} below zero".format(
                     metric
                 ))
-                locals()[metric] = 0
+                setattr(p, metric, 0)
 
-
-# fxL=330, fxR=330, cxL=320, cxR=320, xo=0, yo=10, xo2=-80, yo2=60
-# fxL=350, fxR=350, cxL=210, cxR=210, xo=-20, yo=40, xo2=-50, yo2=-10
-# fxL=330, fxR=330, cxL=320, cxR=320, xo=0, yo=10, xo2=-80, yo2=60
+if __name__ == '__main__':
+    run()
