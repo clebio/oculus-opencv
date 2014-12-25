@@ -13,6 +13,27 @@ import sys
 import cv2
 import numpy as np
 import ovrsdk as ovr
+import argparse
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    '-l',
+    '--left',
+    help='Left video device integer value (e.g. /dev/video1 is "1")',
+    type=int,
+    default=0,
+)
+
+parser.add_argument(
+    '-r',
+    '--right',
+    help='Right video device integer value (e.g. /dev/video1 is "1")',
+    type=int,
+    default=1,
+)
+
+args = parser.parse_args()
 
 def crop(image, _xl, _xr, _yl, _yr, width, height):
     return image[_xl:width-_xr, _yl:height-_yr]
@@ -104,8 +125,8 @@ if __name__ == '__main__':
         cropYR=('a', 'g'),
     )
 
-    cR = cv2.VideoCapture(0)
-    cL = cv2.VideoCapture(1)
+    cR = cv2.VideoCapture(args.right)
+    cL = cv2.VideoCapture(args.left)
 
     if not (cR.isOpened() and cL.isOpened()):
         print('Failed to find two cameras. Are they connected?')
