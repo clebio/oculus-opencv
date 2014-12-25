@@ -33,7 +33,7 @@ def transform(image, matrix):
             [0.0, 200, 95],
             [0.0, 0.0, 1]
         ])
-    imageDis = cv2.undistort(image, matrix, np.array([0.22, 0.2400, 0, 0, 0]))
+    imageDis = cv2.undistort(image, matrix, np.array([0.22, 0.24, 0, 0, 0]))
     return imageDis
 
 def joinImages(imageL, imageR):
@@ -57,10 +57,10 @@ if __name__ == '__main__':
     lastTime = time.clock()
 
     #Matrix coefficients for left eye barrel effect
-    fxL = 250
+    fxL = 300
     fyL = 200
-    cxL = 200
-    cyL = 150
+    cxL = 300
+    cyL = 240
 
     #Matrix coefficients for right eye barrel effect
     fxR = fxL #257
@@ -79,8 +79,8 @@ if __name__ == '__main__':
     yO = 0
 
     #offsets to translate image after distortion
-    xO2 = -20
-    yO2 = 100
+    xO2 = -70
+    yO2 = 40
 
 
     ESCAPE = ''
@@ -92,6 +92,12 @@ if __name__ == '__main__':
     """initializes ovrsdk and starts tracking oculus"""
     ovr_Initialize()
     hmd = ovrHmd_Create(0)
+    try:
+        hmd.contents
+    except ValueError as _ex:
+        print('Failed to initialize Oculus, is it connected?')
+        sys.exit()
+
     hmdDesc = ovrHmdDesc()
     ovrHmd_GetDesc(hmd, byref(hmdDesc))
     ovrHmd_StartSensor(
@@ -100,11 +106,10 @@ if __name__ == '__main__':
         0
     )
 
+    # The device dimensions; should we use them for width/height?
     size0 = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmdDesc.MaxEyeFov[0], 1.0)
     size1 = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmdDesc.MaxEyeFov[1], 1.0)
 
-    target_width = size0.w + size1.w
-    target_height = size0.h + size1.h
     cv2.namedWindow('vid', 16 | cv2.WND_PROP_FULLSCREEN)
     cv2.setWindowProperty(
         "vid",
@@ -135,8 +140,70 @@ if __name__ == '__main__':
         fraCom = joinImages(fraLs, fraRs)
         cv2.imshow('vid',fraCom)
 
-        if cv2.waitKey(1) & 255 == ord('q'):
+        key =  cv2.waitKey(1) & 255
+
+        if key == ord('q'):
             cv2.destroyAllWindows()
             cR.release()
             cL.release()
             break
+
+        elif key == ord('e'):
+            fyL += 10
+            fyR += 10
+        elif key == ord('d'):
+            fyL += -10
+            fyR += -10
+        elif key == ord('s'):
+            fxL += -10
+            fxR += -10
+        elif key == ord('f'):
+            fxL += 10
+            fxR += 10
+        elif key == ord('i'):
+            cyL += -10
+            cyR += -10
+        elif key == ord('k'):
+            cyL += 10
+            cyR += 10
+        elif key == ord('j'):
+            cxL += -10
+            cxR += -10
+        elif key == ord('l'):
+            cxL += 10
+            cxR += 10
+
+        elif key == ord('o'):
+            yO2 += 10
+        elif key == ord('u'):
+            yO2 += -10
+
+        elif key == ord('m'):
+            xO2 += 10
+        elif key == ord('n'):
+            xO2 += -10
+
+        elif key == ord(','):
+            xO += -10
+        elif key == ord('.'):
+            xO += 10
+        elif key == ord('h'):
+            yO += 10
+        elif key == ord(';'):
+            yO += -10
+
+        elif key == ord('p'):
+            print("fxL={fxl}, fxR={fxr}, cxL={cxl}, cxR={cxr}, xO={xo}, yO={yo}, xO2={xo2}, yO2={yo2}".format(
+                fxl=fxL,
+                fxr=fxR,
+                cxl=cxL,
+                cxr=cxR,
+                xo=xO,
+                yo=yO,
+                xo2=xO2,
+                yo2=yO2,
+                )
+            )
+        # fxL=330, fxR=330, cxL=320, cxR=320, xO=0, yO=10, xO2=-80, yO2=60
+        # fxL=350, fxR=350, cxL=210, cxR=210, xO=-20, yO=40, xO2=-50, yO2=-10
+        # fxL=330, fxR=330, cxL=320, cxR=320, xO=0, yO=10, xO2=-80, yO2=60
