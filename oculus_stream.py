@@ -14,11 +14,14 @@ Some parameter groups that seem to work ok:
 Based directly off of: http://www.argondesign.com/news/2014/aug/26/augmented-reality-oculus-rift/
 """
 
+
 import sys
 import cv2
 import numpy as np
 import ovrsdk as ovr
 import argparse
+import time
+from math import floor
 
 parser = argparse.ArgumentParser()
 
@@ -100,6 +103,20 @@ def print_params():
                yo2=p.yo2,
            ))
 
+def generate_frame(fps):
+    milli = 1000.0
+    frame = milli/fps
+    start = time.time()*frame
+
+    prev = floor(time.time()*frame - start)
+    while True:
+        now = floor(time.time()*frame - prev)
+        if now > prev:
+            yield True
+        else:
+            yield False
+        prev = now
+
 class Parameters():
     #Matrix coefficients for left eye barrel effect
     fxL = 300
@@ -133,8 +150,11 @@ class Parameters():
     cropYR = 0
 
     # width, height, t = left_frame.shape
-    width =720
+    width = 720
     height = 480
+
+    # frames per second
+    fps = 24.0
 
 def run():
     p = Parameters
@@ -209,7 +229,7 @@ def run():
         video_out = cv2.VideoWriter(
             'output.avi',
             fourcc,
-            24.0,
+            p.fps,
             (960, 520), # TODO: make this dynamic
             True # color, not grayscale
         )
@@ -250,7 +270,7 @@ def run():
 
         cv2.imshow('vid', composite_frame)
 
-        if video_out:
+        if video_out and next(generate_frame(p.fps)):
             video_out.write(composite_frame)
 
         key = cv2.waitKey(1) & 255
