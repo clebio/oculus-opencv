@@ -38,6 +38,13 @@ parser.add_argument(
     default=1,
 )
 
+parser.add_argument(
+    '-w',
+    '--write',
+    help='Whether to record video to file, off by default to save overhead',
+    action='store_true',
+)
+
 args = parser.parse_args()
 
 def crop(image, _xl, _xr, _yl, _yr, width, height):
@@ -125,6 +132,10 @@ class Parameters():
     cropYL = 0
     cropYR = 0
 
+    # width, height, t = left_frame.shape
+    width =720
+    height = 480
+
 def run():
     p = Parameters
 
@@ -192,10 +203,20 @@ def run():
         cv2.cv.CV_WINDOW_FULLSCREEN
     )
 
+    video_out = False
+    if args.write:
+        fourcc = cv2.cv.CV_FOURCC(*'XVID')
+        video_out = cv2.VideoWriter(
+            'output.avi',
+            fourcc,
+            24.0,
+            (960, 520), # TODO: make this dynamic
+            True # color, not grayscale
+        )
+
     while True:
         _, left_frame = cL.read()
         _, right_frame = cR.read()
-        width, height = 720, 480 #, t = left_frame.shape
         matrixL = create_distortion_matrix(p.fxL, p.cxL, p.fyL, p.cyL)
         matrixR = create_distortion_matrix(p.fxR, p.cxR, p.fyR, p.cyR)
 
@@ -213,8 +234,8 @@ def run():
             p.cropXR,
             p.cropYL,
             p.cropYR,
-            width,
-            height,
+            p.width,
+            p.height,
         )
         right_frame = crop(
             right_frame,
@@ -222,12 +243,15 @@ def run():
             p.cropXR,
             p.cropYL,
             p.cropYR,
-            width,
-            height,
+            p.width,
+            p.height,
         )
         composite_frame = join_images(left_frame, right_frame)
 
         cv2.imshow('vid', composite_frame)
+
+        if video_out:
+            video_out.write(composite_frame)
 
         key = cv2.waitKey(1) & 255
         if key == ord('q'):
@@ -235,6 +259,8 @@ def run():
             cR.release()
             cL.release()
             print_params()
+            if video_out:
+                video_out.release()
             break
 
         elif key == ord('p'):
