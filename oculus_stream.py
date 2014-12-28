@@ -6,11 +6,6 @@ Will display on whichever monitor is current when run.
 
 Requires OpenCV 2.4.9, numpy 1.8.1 and ovrsdk
 
-Some parameter groups that seem to work ok:
-  fxL=330, fxR=330, cxL=320, cxR=320, xo=0, yo=10, xo2=-80, yo2=60
-  fxL=350, fxR=350, cxL=210, cxR=210, xo=-20, yo=40, xo2=-50, yo2=-10
-  fxL=330, fxR=330, cxL=320, cxR=320, xo=0, yo=10, xo2=-80, yo2=60
-
 Based directly off of: http://www.argondesign.com/news/2014/aug/26/augmented-reality-oculus-rift/
 """
 
@@ -48,6 +43,21 @@ parser.add_argument(
     action='store_true',
 )
 
+parser.add_argument(
+    '-O',
+    '--oculus',
+    help='Whether to enable Oculus setup',
+    action='store_false',
+)
+
+parser.add_argument(
+    '-f',
+    '--fps',
+    help='Frames per second (for recording)',
+    default=15,
+    type=float,
+)
+
 args = parser.parse_args()
 
 def crop(image, _xl, _xr, _yl, _yr, width, height):
@@ -62,12 +72,6 @@ def create_distortion_matrix(_fx, _cx, _fy, _cy):
     return matrix
 
 def transform(image, matrix):
-    if matrix == None:
-        matrix = np.array([
-            [200, 0, 200],
-            [0.0, 200, 95],
-            [0.0, 0.0, 1]
-        ])
     image_distortion = cv2.undistort(
         image,
         matrix,
@@ -84,45 +88,28 @@ def translate(image, x, y):
     Also see the bottom of this page:
     http://www.3dtv.at/knowhow/EncodingDivx_en.aspx
     """
-    rows, cols = 576, 720 #288, 384
+    rows, cols = 480, 720 #288, 384
     matrix = np.float32([[1, 0, x], [0, 1, y]])
     image_translate = cv2.warpAffine(image, matrix, (cols, rows))
     return image_translate
 
 def print_params():
     p = Parameters
-    print(("fxL={fxl}, fxR={fxr}, cxL={cxl}, cxR={cxr}, "
-           "xo={xo}, yo={yo}, xo2={xo2}, yo2={yo2}").format(
-               fxl=p.fxL,
-               fxr=p.fxR,
-               cxl=p.cxL,
-               cxr=p.cxR,
-               xo=p.xo,
-               yo=p.yo,
-               xo2=p.xo2,
-               yo2=p.yo2,
-           ))
-
-def generate_frame(fps):
-    milli = 1000.0
-    frame = milli/fps
-    start = time.time()*frame
-
-    prev = floor(time.time()*frame - start)
-    while True:
-        now = floor(time.time()*frame - prev)
-        if now > prev:
-            yield True
-        else:
-            yield False
-        prev = now
+    strings = []
+    for item in [par for par in dir(p) if par.isalnum()]:
+        strings.append("{name} = {value}".format(
+            name=item,
+            value=getattr(p, item),
+        ))
+    string = ', '.join(strings)
+    print(string)
 
 class Parameters():
     #Matrix coefficients for left eye barrel effect
-    fxL = 300
-    fyL = 200
-    cxL = 300
-    cyL = 240
+    fxL = 350
+    fyL = 300
+    cxL = 310
+    cyL = 260
 
     #Matrix coefficients for right eye barrel effect
     fxR = fxL #257
@@ -137,24 +124,24 @@ class Parameters():
     yR = -yL
 
     #offsets to translate image before distortion
-    xo = 0
-    yo = 0
+    xo = -80
+    yo = 20
 
     #offsets to translate image after distortion
-    xo2 = -70
-    yo2 = 40
+    xo2 = -110
+    yo2 = 0
 
-    cropXL = 0
-    cropXR = 200
+    cropXL = 30
+    cropXR = 170
     cropYL = 0
-    cropYR = 0
+    cropYR = 80
 
     # width, height, t = left_frame.shape
     width = 720
     height = 480
 
     # frames per second
-    fps = 24.0
+    fps = args.fps
 
 def run():
     p = Parameters
@@ -188,33 +175,36 @@ def run():
     """initializes ovrsdk and starts tracking oculus"""
     ovr.ovr_Initialize()
     hmd = ovr.ovrHmd_Create(0)
+
     try:
         hmd.contents
     except ValueError as _:
         print('Failed to initialize Oculus, is it connected?')
-        sys.exit()
+        if args.oculus:
+            sys.exit()
 
-    hmdDesc = ovr.ovrHmdDesc()
-    ovr.ovrHmd_GetDesc(hmd, ovr.byref(hmdDesc))
-    ovr.ovrHmd_StartSensor(
-        hmd,
-        ovr.ovrSensorCap_Orientation | ovr.ovrSensorCap_YawCorrection,
-        0
-    )
+    if args.oculus:
+        hmdDesc = ovr.ovrHmdDesc()
+        ovr.ovrHmd_GetDesc(hmd, ovr.byref(hmdDesc))
+        ovr.ovrHmd_StartSensor(
+            hmd,
+            ovr.ovrSensorCap_Orientation | ovr.ovrSensorCap_YawCorrection,
+            0
+        )
 
-    # The device dimensions; should we use them for width/height?
-    _ = ovr.ovrHmd_GetFovTextureSize(
-        hmd,
-        ovr.ovrEye_Left,
-        hmdDesc.MaxEyeFov[0],
-        1.0
-    )
-    _ = ovr.ovrHmd_GetFovTextureSize(
-        hmd,
-        ovr.ovrEye_Left,
-        hmdDesc.MaxEyeFov[1],
-        1.0
-    )
+        # The device dimensions; should we use them for width/height?
+        _ = ovr.ovrHmd_GetFovTextureSize(
+            hmd,
+            ovr.ovrEye_Left,
+            hmdDesc.MaxEyeFov[0],
+            1.0
+        )
+        _ = ovr.ovrHmd_GetFovTextureSize(
+            hmd,
+            ovr.ovrEye_Right,
+            hmdDesc.MaxEyeFov[1],
+            1.0
+        )
 
     cv2.namedWindow('vid', 16 | cv2.WND_PROP_FULLSCREEN)
     cv2.setWindowProperty(
@@ -235,16 +225,20 @@ def run():
         )
 
     while True:
+
         _, left_frame = cL.read()
         _, right_frame = cR.read()
+
         matrixL = create_distortion_matrix(p.fxL, p.cxL, p.fyL, p.cyL)
         matrixR = create_distortion_matrix(p.fxR, p.cxR, p.fyR, p.cyR)
 
         #translates, crops and distorts image
-        left_frame = translate(left_frame, p.xL+p.xo, p.yL+p.yo)
-        right_frame = translate(right_frame, p.xR+p.xo, p.yR+p.yo)
+        left_frame = translate(left_frame, p.xL + p.xo, p.yL + p.yo)
+        right_frame = translate(right_frame, p.xR + p.xo, p.yR + p.yo)
+
         left_frame = transform(left_frame, matrixL)
         right_frame = transform(right_frame, matrixR)
+
         left_frame = translate(left_frame, p.xo2, p.yo2)
         right_frame = translate(right_frame, p.xo2, p.yo2)
 
@@ -270,7 +264,7 @@ def run():
 
         cv2.imshow('vid', composite_frame)
 
-        if video_out and next(generate_frame(p.fps)):
+        if video_out:
             video_out.write(composite_frame)
 
         key = cv2.waitKey(1) & 255
