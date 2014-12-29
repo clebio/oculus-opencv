@@ -10,13 +10,23 @@ Based directly off of: http://www.argondesign.com/news/2014/aug/26/augmented-rea
 """
 
 
+import time
+from math import floor
 import sys
 import cv2
 import numpy as np
 import ovrsdk as ovr
 import argparse
-import time
-from math import floor
+
+import gevent
+from gevent import (
+    monkey,
+    Greenlet,
+    queue,
+)
+import signal
+
+monkey.patch_all()
 
 parser = argparse.ArgumentParser()
 
@@ -88,23 +98,43 @@ def translate(image, x, y):
     Also see the bottom of this page:
     http://www.3dtv.at/knowhow/EncodingDivx_en.aspx
     """
-    rows, cols = 480, 720 #288, 384
+    rows, cols = Parameters.height, Parameters.width
     matrix = np.float32([[1, 0, x], [0, 1, y]])
     image_translate = cv2.warpAffine(image, matrix, (cols, rows))
     return image_translate
 
 def print_params():
-    p = Parameters
+    par = Parameters
     strings = []
-    for item in [par for par in dir(p) if par.isalnum()]:
+    for item in [p for p in dir(par) if p.isalnum()]:
         strings.append("{name} = {value}".format(
             name=item,
-            value=getattr(p, item),
+            value=getattr(par, item),
         ))
     string = ', '.join(strings)
     print(string)
 
 class Parameters():
+    key_mappings = dict(
+        fxL=('f', 's'),
+        fxR=('f', 's'),
+        fyL=('e', 'd'),
+        fyR=('e', 'd'),
+        cxL=('l', 'j'),
+        cxR=('l', 'j'),
+        cyL=('k', 'i'),
+        cyR=('k', 'i'),
+        yo2=('o', 'u'),
+        xo2=('m', 'n'),
+        xo=('.', ','),
+        yo=('h', ';'),
+        cropXL=('z', 'x'),
+        cropYL=('w', 'r'),
+        cropXR=('c', 'v'),
+        cropYR=('a', 'g'),
+    )
+
+
     #Matrix coefficients for left eye barrel effect
     fxL = 350
     fyL = 300
@@ -143,34 +173,121 @@ class Parameters():
     # frames per second
     fps = args.fps
 
+def generate_frame():
+    start=time.time()
+
+    prev =  floor(args.fps * (time.time() - start))
+    while True:
+        now =  floor(args.fps * (time.time() - start))
+        if now > prev:
+            yield now
+        prev = now
+
+class CameraReaderGreenlet(Greenlet):
+    def __init__(self, camera, queue):
+        Greenlet.__init__(self)
+        print('Greenlet init with {}, {}'.format(camera, queue))
+        self.camera = camera
+        self.queue = queue
+
+    def _run(self):
+        par = Parameters
+
+        while True:
+            _, frame = self.camera.read()
+
+            matrix = create_distortion_matrix(
+                par.fxL, par.cxL, par.fyL, par.cyL
+            )
+            frame = translate(frame, par.xL + par.xo, par.yL + par.yo)
+            frame = transform(frame, matrix)
+            frame = translate(frame, par.xo2, par.yo2)
+
+            frame = crop(
+                frame,
+                par.cropXL,
+                par.cropXR,
+                par.cropYL,
+                par.cropYR,
+                par.width,
+                par.height,
+            )
+            self.queue.put_nowait(frame)
+            gevent.sleep(0)
+
+    def __str__(self):
+        return 'CameraReaderGreenlet for {}'.format(self.camera)
+
+class CameraProcessorGreenlet(Greenlet):
+    def __init__(self, left_queue, right_queue, callback):
+        Greenlet.__init__(self)
+        print('Processor init')
+        self.left = left_queue
+        self.right = right_queue
+        self.callback = callback
+        self.video_out = False
+        if args.write:
+            fourcc = cv2.cv.CV_FOURCC(*'XVID')
+            self.video_out = cv2.VideoWriter(
+                'output.avi',
+                fourcc,
+                Parameters.fps,
+                (Parameters.width, Parameters.height),
+                True # color, not grayscale
+            )
+
+    def _run(self):
+        while True:
+            self.iterate()
+            gevent.sleep(0)
+
+    def iterate(self):
+        if not (self.left.empty() and self.right.empty()):
+            composite_frame = join_images(
+                self.left.get(),
+                self.right.get(),
+            )
+            cv2.imshow('vid', composite_frame)
+
+            if self.video_out:
+                self.video_out.write(composite_frame)
+
+        key = cv2.waitKey(1) & 255
+        if key == ord('q'):
+            self.callback()
+            if self.video_out:
+                self.video_out.release()
+            self.kill()
+
+        elif key == ord('p'):
+            print_params()
+
+        for metric, tup in Parameters.key_mappings.iteritems():
+            _add = tup[0]
+            _sub = tup[1]
+            if key == ord(_add):
+                setattr(
+                    Parameters,
+                    metric,
+                    getattr(Parameters, metric) + 10
+                )
+            if key == ord(_sub):
+                setattr(
+                    Parameters,
+                    metric,
+                    getattr(Parameters, metric) - 10
+                )
+
+        # Don't let these go negative
+        for metric in ['cropXL', 'cropYL', 'cropXR', 'cropYR']:
+            p_m = getattr(Parameters, metric)
+            if p_m < 0:
+                print("Attempting to set {} below zero".format(
+                    metric
+                ))
+                setattr(Parameters, metric, 0)
+
 def run():
-    p = Parameters
-
-    key_mappings = dict(
-        fxL=('f', 's'),
-        fxR=('f', 's'),
-        fyL=('e', 'd'),
-        fyR=('e', 'd'),
-        cxL=('l', 'j'),
-        cxR=('l', 'j'),
-        cyL=('k', 'i'),
-        cyR=('k', 'i'),
-        yo2=('o', 'u'),
-        xo2=('m', 'n'),
-        xo=('.', ','),
-        yo=('h', ';'),
-        cropXL=('z', 'x'),
-        cropYL=('w', 'r'),
-        cropXR=('c', 'v'),
-        cropYR=('a', 'g'),
-    )
-
-    cR = cv2.VideoCapture(args.right)
-    cL = cv2.VideoCapture(args.left)
-
-    if not (cR.isOpened() and cL.isOpened()):
-        print('Failed to find two cameras. Are they connected?')
-        sys.exit()
 
     """initializes ovrsdk and starts tracking oculus"""
     ovr.ovr_Initialize()
@@ -213,89 +330,40 @@ def run():
         cv2.cv.CV_WINDOW_FULLSCREEN
     )
 
-    video_out = False
-    if args.write:
-        fourcc = cv2.cv.CV_FOURCC(*'XVID')
-        video_out = cv2.VideoWriter(
-            'output.avi',
-            fourcc,
-            p.fps,
-            (960, 520), # TODO: make this dynamic
-            True # color, not grayscale
-        )
+    left_queue = queue.Queue()
+    right_queue = queue.Queue()
 
-    while True:
+    camera_left = cv2.VideoCapture(args.left)
+    camera_right = cv2.VideoCapture(args.right)
 
-        _, left_frame = cL.read()
-        _, right_frame = cR.read()
+    if not (camera_left.isOpened() and camera_right.isOpened()):
+        print('Failed to find two cameras. Are they connected?')
+        sys.exit()
 
-        matrixL = create_distortion_matrix(p.fxL, p.cxL, p.fyL, p.cyL)
-        matrixR = create_distortion_matrix(p.fxR, p.cxR, p.fyR, p.cyR)
+    def close_callback():
+        cv2.destroyAllWindows()
+        camera_left.release()
+        camera_right.release()
 
-        #translates, crops and distorts image
-        left_frame = translate(left_frame, p.xL + p.xo, p.yL + p.yo)
-        right_frame = translate(right_frame, p.xR + p.xo, p.yR + p.yo)
+        left.kill()
+        right.kill()
+        print_params()
 
-        left_frame = transform(left_frame, matrixL)
-        right_frame = transform(right_frame, matrixR)
+    left = CameraReaderGreenlet(camera_left, left_queue)
+    right = CameraReaderGreenlet(camera_right, right_queue)
+    processor = CameraProcessorGreenlet(
+        left_queue,
+        right_queue,
+        close_callback
+    )
 
-        left_frame = translate(left_frame, p.xo2, p.yo2)
-        right_frame = translate(right_frame, p.xo2, p.yo2)
+    left.start()
+    right.start()
+    processor.start()
 
-        left_frame = crop(
-            left_frame,
-            p.cropXL,
-            p.cropXR,
-            p.cropYL,
-            p.cropYR,
-            p.width,
-            p.height,
-        )
-        right_frame = crop(
-            right_frame,
-            p.cropXL,
-            p.cropXR,
-            p.cropYL,
-            p.cropYR,
-            p.width,
-            p.height,
-        )
-        composite_frame = join_images(left_frame, right_frame)
+    gevent.signal(signal.SIGQUIT, gevent.kill)
+    gevent.joinall([left, right, processor])
 
-        cv2.imshow('vid', composite_frame)
-
-        if video_out:
-            video_out.write(composite_frame)
-
-        key = cv2.waitKey(1) & 255
-        if key == ord('q'):
-            cv2.destroyAllWindows()
-            cR.release()
-            cL.release()
-            print_params()
-            if video_out:
-                video_out.release()
-            break
-
-        elif key == ord('p'):
-            print_params()
-
-        for metric, tup in key_mappings.iteritems():
-            _add = tup[0]
-            _sub = tup[1]
-            if key == ord(_add):
-                setattr(p, metric, getattr(p, metric) + 10)
-            if key == ord(_sub):
-                setattr(p, metric, getattr(p, metric) - 10)
-
-        # Don't let these go negative
-        for metric in ['cropXL', 'cropYL', 'cropXR', 'cropYR']:
-            p_m = getattr(p, metric)
-            if p_m < 0:
-                print("Attempting to set {} below zero".format(
-                    metric
-                ))
-                setattr(p, metric, 0)
 
 if __name__ == '__main__':
     run()
