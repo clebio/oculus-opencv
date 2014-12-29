@@ -174,19 +174,20 @@ class Parameters():
     fps = args.fps
 
 def generate_frame():
-    start=time.time()
+    start = time.time()
 
     prev =  floor(args.fps * (time.time() - start))
     while True:
-        now =  floor(args.fps * (time.time() - start))
+        now = floor(args.fps * (time.time() - start))
         if now > prev:
-            yield now
+            yield True
+        else:
+            yield False
         prev = now
 
 class CameraReaderGreenlet(Greenlet):
     def __init__(self, camera, queue):
         Greenlet.__init__(self)
-        print('Greenlet init with {}, {}'.format(camera, queue))
         self.camera = camera
         self.queue = queue
 
@@ -212,7 +213,7 @@ class CameraReaderGreenlet(Greenlet):
                 par.width,
                 par.height,
             )
-            self.queue.put_nowait(frame)
+            self.queue.put(frame)
             gevent.sleep(0)
 
     def __str__(self):
@@ -225,6 +226,7 @@ class CameraProcessorGreenlet(Greenlet):
         self.left = left_queue
         self.right = right_queue
         self.callback = callback
+
         self.video_out = False
         if args.write:
             fourcc = cv2.cv.CV_FOURCC(*'XVID')
@@ -232,7 +234,7 @@ class CameraProcessorGreenlet(Greenlet):
                 'output.avi',
                 fourcc,
                 Parameters.fps,
-                (Parameters.width, Parameters.height),
+                (800, 450), # TODO: make this dynamic
                 True # color, not grayscale
             )
 
