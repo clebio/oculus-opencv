@@ -1,6 +1,11 @@
+'''
+A basic test to read all available /dev/video devices and display
+them in separate frames.
+'''
+
+
 import numpy as np
 import cv2
-
 import os
 
 devices = os.listdir('/dev/')

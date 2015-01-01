@@ -1,27 +1,39 @@
-
 import numpy as np
 import cv2
 
 def crop(image, _xl, _xr, _yl, _yr, width, height):
-   return image[_xl:width-_xr, _yl:height-_yr]
+    """Crop the image based on inputs"""
+    return image[
+        _xl:width - _xr,
+        _yl:height - _yr
+    ]
 
 def create_distortion_matrix(_fx, _cx, _fy, _cy):
-    matrix = np.array([
+    """Construct distortion matrix from arguments"""
+    return np.array([
         [_fx, 0, _cx],
         [0, _fy, _cy],
         [0, 0, 1]
     ])
-    return matrix
 
-def transform(image, matrix):
-    image_distortion = cv2.undistort(
+def transform(image, matrix, k1=0.22, k2=0.24):
+    """Apply barrel distortion using OpenCV's Undistort operation
+
+    This counteracts the pincushion distortion that the Oculus lens
+    applies. The distortion coefficients k1 and k2 are the main
+    action here.
+
+    [1]: http://docs.opencv.org/trunk/doc/py_tutorials/py_calib3d/\
+             py_calibration/py_calibration.html
+    """
+    return cv2.undistort(
         image,
         matrix,
-        np.array([0.22, 0.24, 0, 0, 0])
+        np.array([k1, k2, 0, 0, 0])
     )
-    return image_distortion
 
 def join_images(image_left, image_right):
+    """Join two images left-to-right, using Numpy"""
     return np.append(image_left, image_right, axis=1)
 
 def translate(image, x, y):
@@ -30,23 +42,33 @@ def translate(image, x, y):
     Also see the bottom of this page:
     http://www.3dtv.at/knowhow/EncodingDivx_en.aspx
     """
-    rows, cols = 480, 720 #288, 384
+    rows, cols = 480, 720 # TODO: Make dynamic
     matrix = np.float32([[1, 0, x], [0, 1, y]])
     image_translate = cv2.warpAffine(image, matrix, (cols, rows))
     return image_translate
 
 def print_params():
-    p = Parameters
+    """Print out all parameters for reference"""
     strings = []
-    for item in [par for par in dir(p) if par.isalnum()]:
+    for item in [par for par in dir(Parameters) if par.isalnum()]:
         strings.append("{name} = {value}".format(
             name=item,
-            value=getattr(p, item),
+            value=getattr(Parameters, item),
         ))
     string = ', '.join(strings)
     print(string)
 
 class Parameters():
+    """Parameters for the video frame and the like
+
+    Includes width, height, offsets, warp, and window size, as well
+    as frames-per-second.
+
+    Also includes a set of key mapping tuples, which are used to
+    increment and decrement (the first and second items in the tuple)
+    each parameter. This could be possibly more elegant, but it's
+    simple and it works ok.
+    """
     #Matrix coefficients for left eye barrel effect
     fxL = 350
     fyL = 300
@@ -54,10 +76,10 @@ class Parameters():
     cyL = 260
 
     #Matrix coefficients for right eye barrel effect
-    fxR = fxL #257
-    fyR = fyL #211
-    cxR = cxL #207
-    cyR = cyL #138
+    fxR = fxL
+    fyR = fyL
+    cxR = cxL
+    cyR = cyL
 
     #offset to align images
     xL = 0
