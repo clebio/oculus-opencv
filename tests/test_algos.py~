@@ -1,9 +1,0 @@
-import unittest
-
-class TestAlgos(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def test_crop(self):
-        assert_true(False)
