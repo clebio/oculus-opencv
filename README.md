@@ -7,7 +7,7 @@ cameras are not connected, the program will exit noting that. Any regular USB
 webcam should do, I suppose, though I'm using analog [video capture
 devices][diamond].
 
-This code was development and tested only on **Kubuntu 14.10** using **OpenCV
+This code was developed and tested only on **Kubuntu 14.10** using **OpenCV
 2.4.9**; I welcome pull requests if you find changes needed to support Windows
 or other platforms. Getting Python-OpenCV set up properly on a new machine is
 quite non-trivial. The best stand-alone reference I've found so far is
@@ -31,8 +31,6 @@ if you find mistakes.
 You'll need `python-qt4`, since `PyQt4` is strangely [not installable via
 pip][pip-pyqt], despite [being on PyPI][pypi-pyqt].
 
-`tv4l2-ctl -s ntsc-m -d /dev/video1`
-
 By far the trickiest part of set up is OpenCV. I found it's possible to
 successfully build OpenCV via `cmake`/`make`, and yet not have some of the
 components needed for this program to run (e.g. `cv2.waitKey`). If in doubt,
@@ -44,7 +42,7 @@ attention to the checks he details regarding `cmake`'s output.
 My video capture cards are identified as PAL format when first plugged in. To
 remedy this, I set them to NTSC via a simple shell script:
 
-```bash
+```sh
 ./util/set-ntsc.sh 0 1
 ```
 
@@ -52,7 +50,7 @@ By default, it will try `0 1` as the video devices. Supply arguments if you
 need to skip over a built-in webcam, say. The `v4l2-ctl` utility lives in the
 `v4l-utils` package:
 
-```bash
+```sh
 $ apt-cache search v4l2-ctl
 v4l-utils - Collection of command line video4linux utilities
 ```
@@ -60,15 +58,18 @@ v4l-utils - Collection of command line video4linux utilities
 The main entry-point is the `src/oculus_stream.py` file. It uses `argparse`, so
 you can get basic help by running:
 
-    python src/oculus_stream.py --help
+```sh
+python src/oculus_stream.py --help
+```
 
 A few useful parameters are:
 
-- `-O` To run without the Oculus connected (either for testing or to record
-  video to a file only)
+- `-O` To run without the Oculus connected, either for testing or to record
+  video to a file only (it's a capital letter 'o', as in Oculus...).
 - `-w` Write to a file (currently just `output.avi`).
-- `-l`, `-w` specify the index of the video devices (e.g. `/dev/video0` is
+- `-l`, `-r` specify the index of the video devices (e.g. `/dev/video0` is
   `0`). Useful if your laptop has a built-in webcam, which you want to ignore
+  (or to flip the two devices left to right).
 
 Note that `-f`, frames per second, should work properly, but in my testing, the
 USB cameras are only capable of about 15 FPS. Specifying anything higher and
@@ -83,12 +84,18 @@ actual unit tests for the hardware, I suppose).
 We provide unit tests for discrete components of the system. Run the
 test suite via:
 
-    python tests.py
+```sh
+python tests.py
+```
+
+So far I've mocked out  hardware (VideoCapture, OVR HMD), so that one
+can run the tests without hardware connected. But as a result, don't
+expect these tests to cover hardware interactions.
 
 ## Design and Discussion
 
 The camera readers and video processor are made asynchronous via `gevent`
-Greenlets. I originally thought the frame rate was limited by the software
+greenlets. I originally thought the frame rate was limited by the software
 pipeline and this was an attempt to address that. It appears that, instead, the
 USB capture devices that I use are limited in their framerate, but I don't
 think it hurts to retain the asynchronous implementation, so I've left this
@@ -102,7 +109,8 @@ the Pincushion distortion of the Rift's lenses.
 In developing this, I've found that two USB video streams is quite taxing on
 even a powerful computer. Each stream uses most of a USB bus' bandwidth. Try to
 isolate the two streams on separate USB/PCI channels -- that is, try different
-USB ports on your computer.
+USB ports on your computer. Adding the Oculus (another USB device, as well as
+HDMI) only further stymies a good machine. Good luck!
 
 
 [rift]: https://www.oculus.com/rift/
