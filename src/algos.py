@@ -1,8 +1,27 @@
+"""
+Algorithms for manipulating OpenCV videos for use with the Oculus DK2
+
+The distortion and transform operations are based closely on:
+http://www.argondesign.com/news/2014/aug/26/augmented-reality-oculus-rift/
+
+"""
 import numpy as np
 import cv2
 
-def crop(image, _xl, _xr, _yl, _yr, width, height):
-    """Crop the image based on inputs"""
+def crop(image, _xl, _xr, _yl, _yr):
+    """Crop the image based on inputs
+
+    For a color image, `image` is a 3D array, where the third dimenion
+    is the RGB color separation. This method ignores the third
+    dimensions, thus cropping all three equally.
+
+    Args:
+        image (np.array): The image matrix returned as the second
+            item of cv2.VideoCapture.read().
+        _xl, _xr, _yl, _yr (int): The boundaries to crop `image` to
+    """
+
+    width, height = Parameters.width, Parameters.height
     return image[
         _xl:width - _xr,
         _yl:height - _yr
@@ -37,15 +56,20 @@ def join_images(image_left, image_right):
     return np.append(image_left, image_right, axis=1)
 
 def translate(image, x, y):
-    """Oculus DK2 is two images together equal to 2364 x 1461
+    """Strict linear translation, using OpenCv's warpAffine
+
+    TODO: Make rows and columns dynamic (OpenCV doesn't seem to  like
+    it if you try to change this value during runtime).
 
     Also see the bottom of this page:
     http://www.3dtv.at/knowhow/EncodingDivx_en.aspx
     """
-    rows, cols = 480, 720 # TODO: Make dynamic
-    matrix = np.float32([[1, 0, x], [0, 1, y]])
-    image_translate = cv2.warpAffine(image, matrix, (cols, rows))
-    return image_translate
+    columns, rows = Parameters.width, Parameters.height
+    return cv2.warpAffine(
+        image,
+        np.float32([[1, 0, x], [0, 1, y]]),
+        (columns, rows)
+    )
 
 def print_params():
     """Print out all parameters for reference"""
@@ -105,7 +129,7 @@ class Parameters():
     height = 480
 
     # frames per second
-    fps = 24
+    fps = 15
 
     key_mappings = dict(
         fxL=('f', 's'),
