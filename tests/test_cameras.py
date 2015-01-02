@@ -1,3 +1,4 @@
+from unittest import TestCase
 from gevent import queue
 from src.camera import CameraReader, CameraProcessor
 from mock import Mock, patch
