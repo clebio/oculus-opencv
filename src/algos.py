@@ -1,10 +1,8 @@
 """
 Algorithms for manipulating OpenCV videos for use with the Oculus DK2
-
-The distortion and transform operations are based closely on:
-http://www.argondesign.com/news/2014/aug/26/augmented-reality-oculus-rift/
-
 """
+
+
 import numpy as np
 import cv2
 

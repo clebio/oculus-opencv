@@ -2,4 +2,4 @@ PyOpenGL==3.1.0
 matplotlib==1.4.2
 numpy==1.8.2
 python-ovrsdk==0.3.2.2
-gevent
+gevent==1.0.1
