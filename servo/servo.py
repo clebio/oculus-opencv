@@ -39,6 +39,8 @@ def move(servo, angle):
 
     (e.g.) >>> servo.move(2, 90)
            ... # "move servo #2 to 90 degrees"'''
+    usbport = '/dev/ttyUSB0'
+    ser = serial.Serial(usbport, 19200, timeout=1)
 
     if (0 <= angle <= 180):
         ser.write(chr(255))
