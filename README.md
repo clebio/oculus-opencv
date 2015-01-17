@@ -1,5 +1,7 @@
 # Stereoscopic Video using OpenCV and the Oculus Rift
 
+![Video field-test](https://www.youtube.com/watch?v=aUCI2U5E2-8)
+
 ## Setup
 
 This system relies on two USB video sources for video input. If two such
