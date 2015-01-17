@@ -81,6 +81,10 @@ I included `util/multi-stream.py`, which I wrote early on, since it's useful to
 confirm the basic connectivity of the USB video sources (this is in lieu of
 actual unit tests for the hardware, I suppose).
 
+There are also a set of keyboard mappings for changing the distortion
+and cropping parameters on the fly. The definitions are in `src/algos.py` as `Parameters.key_mappings`. I've put a
+[video demonstrating this on Youtube](https://www.youtube.com/watch?v=A6IgDqK26a8).
+
 ## Testing
 
 We provide unit tests for discrete components of the system. Run the
