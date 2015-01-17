@@ -1,6 +1,6 @@
 # Stereoscopic Video using OpenCV and the Oculus Rift
 
-[Video field-test](https://www.youtube.com/watch?v=aUCI2U5E2-8)
+### [Video demonstration](https://www.youtube.com/watch?v=aUCI2U5E2-8)
 
 ## Setup
 
@@ -122,7 +122,7 @@ Video Capture | [Diamond VC500][diamond] | 2
 Video transmit/receive | [5.8 GHz A/V tx/rx set][avtxrx] | 2
 Computer processing | Anything with discrete graphics* | 1
 
-I initially developed this on a desktop computer with a Radeon
+*I initially developed this on a desktop computer with a Radeon
 6700-series graphics card. Since I want to take this to the (RC
 flying) field eventually, I've begun using a laptop with a GeForce GTX
 850m graphic card. The current Oculus documentation seems a bit dated,
