@@ -82,7 +82,8 @@ confirm the basic connectivity of the USB video sources (this is in lieu of
 actual unit tests for the hardware, I suppose).
 
 There are also a set of keyboard mappings for changing the distortion
-and cropping parameters on the fly. The definitions are in `src/algos.py` as `Parameters.key_mappings`. I've put a
+and cropping parameters on the fly. The definitions are in
+`src/algos.py` as `Parameters.key_mappings`. I've put a
 [video demonstrating this on Youtube](https://www.youtube.com/watch?v=A6IgDqK26a8).
 
 ## Testing
@@ -112,18 +113,48 @@ The main objective of this program is to display the program's output on an
 to the host computer as a second monitor), the distortion effects will cancel
 the Pincushion distortion of the Rift's lenses.
 
+# Hardware
+
+Purpose | Name or type | Quantity
+--- | --- | ---
+Video camera | [CMOS Camera][cmoscam] | 2
+Video Capture | [Diamond VC500][diamond] | 2
+Video transmit/receive | [5.8 GHz A/V tx/rx set][avtxrx] | 2
+Computer processing | Anything with discrete graphics* | 1
+
+I initially developed this on a desktop computer with a Radeon
+6700-series graphics card. Since I want to take this to the (RC
+flying) field eventually, I've begun using a laptop with a GeForce GTX
+850m graphic card. The current Oculus documentation seems a bit dated,
+recommending only a Macbook Pro with the Nvidia 650M, which I believe
+is a few years old. That, though, was my baseline criteria for what to
+use.
+
 In developing this, I've found that two USB video streams is quite taxing on
 even a powerful computer. Each stream uses most of a USB bus' bandwidth. Try to
 isolate the two streams on separate USB/PCI channels -- that is, try different
 USB ports on your computer. Adding the Oculus (another USB device, as well as
 HDMI) only further stymies a good machine. Good luck!
 
+# Further work
+
+I am currently working on a [Pan-and-Tilt][pan_tilt] servo setup, on
+which the cameras are mounted. The two servos are driven by an Arduino
+using the [Servo library][servo]. From there, a simple Python script
+connects to the servos via [pySerial][pyserial]. In this way, the
+*pose* data from the Oculus drives the pan and tilt orientation. This
+component is nascent, but I will add more info soon.
 
 [rift]: https://www.oculus.com/rift/
 [diamond]: http://www.amazon.com/dp/B000VM60I8
+[avtxrx]: http://www.getfpv.com/5-8ghz-32ch-fpv-av-600mw-transmitter-receiver.html
+[cmoscam]: https://www.sparkfun.com/products/11745
 [samontab]: http://www.samontab.com/web/2014/06/installing-opencv-2-4-9-in-ubuntu-14-04-lts/
 [git-ovrsdk]: https://github.com/wwwtyro/python-ovrsdk
 [pip-ovrsdk]: https://pypi.python.org/pypi/python-ovrsdk/0.3.2.2
 [argon]: http://www.argondesign.com/news/2014/aug/26/augmented-reality-oculus-rift/
 [pypi-pyqt]: https://pypi.python.org/pypi/PyQt4/4.11.3
 [pip-pyqt]: http://superuser.com/a/725869
+[pan_tilt]: https://www.sparkfun.com/products/10335
+[servo]: http://arduino.cc/en/reference/servo
+[pyserial]: http://pyserial.sourceforge.net/
