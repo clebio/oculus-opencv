@@ -1,6 +1,6 @@
 # Stereoscopic Video using OpenCV and the Oculus Rift
 
-![Video field-test](https://www.youtube.com/watch?v=aUCI2U5E2-8)
+[Video field-test](https://www.youtube.com/watch?v=aUCI2U5E2-8)
 
 ## Setup
 
