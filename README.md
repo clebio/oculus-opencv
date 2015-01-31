@@ -39,6 +39,28 @@ components needed for this program to run (e.g. `cv2.waitKey`). If in doubt,
 step through the first part of Sebastian's blog post and pay particular
 attention to the checks he details regarding `cmake`'s output.
 
+    mkvirtualenv --system-site-packages oculus-opencv
+
+    http://ffmpeg.org/releases/
+    ./configure --enable-gpl --enable-version3 --enable-nonfree\
+      --enable-postproc --enable-libfaac --enable-libopencore-amrnb\
+      --enable-libopencore-amrwb --enable-libtheora\
+      --enable-libvorbis --enable-libxvid --enable-x11grab\
+      --enable-swscale --enable-shared
+    make
+    sudo make install
+
+    wget http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.4.9/opencv-2.4.10.zip
+    unzip opencv-2.4.10.zip
+    cd ../opencv-2.4.10/
+    cd build/
+    cmake -D WITH_TBB=ON -D BUILD_NEW_PYTHON_SUPPORT=ON -D WITH_V4L=ON\
+      -D INSTALL_C_EXAMPLES=ON -D INSTALL_PYTHON_EXAMPLES=ON \
+      -D BUILD_EXAMPLES=ON -D WITH_QT=ON -D WITH_OPENGL=ON \
+      -D WITH_VTK=ON ..
+    make -j8
+    sudo make install
+
 ## Usage
 
 My video capture cards are identified as PAL format when first plugged in. To
@@ -57,8 +79,11 @@ $ apt-cache search v4l2-ctl
 v4l-utils - Collection of command line video4linux utilities
 ```
 
-The main entry-point is the `src/oculus_stream.py` file. It uses `argparse`, so
-you can get basic help by running:
+The program `qv4l2`, in the package of the same name, can be useful
+for debugging the video capture devices.
+
+The main entry-point is the `src/oculus_stream.py` file. It uses
+`argparse`, so you can get basic help by running:
 
 ```sh
 python src/oculus_stream.py --help
@@ -144,6 +169,8 @@ using the [Servo library][servo]. From there, a simple Python script
 connects to the servos via [pySerial][pyserial]. In this way, the
 *pose* data from the Oculus drives the pan and tilt orientation. This
 component is nascent, but I will add more info soon.
+
+* udev rules for serial/tty
 
 [rift]: https://www.oculus.com/rift/
 [diamond]: http://www.amazon.com/dp/B000VM60I8
