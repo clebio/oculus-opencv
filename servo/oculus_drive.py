@@ -1,6 +1,7 @@
 import ovrsdk as ovr
 from time import sleep
-from servo import move
+#from servo import move
+import pololu as po
 
 def oculus():
     """initializes ovrsdk and starts tracking oculus"""
@@ -40,10 +41,10 @@ def oculus():
 
 from getch import getch
 from numpy import interp
-import servo
 
 if __name__ == '__main__':
     hmd = oculus()
+    servo = po.open_serial(COUNT)
 
     pitch_domain = [-0.3, 0.7]
     yaw_domain = [-0.7, 0.7]
@@ -56,8 +57,8 @@ if __name__ == '__main__':
     range0 = 90
     range1 = 45
 
-    move(1, range0)
-    move(2, range1)
+    po.set_target(servo, 1, range0)
+    po.set_target(servo, 1, range1)
 
     while True:
         state = ovr.ovrHmd_GetSensorState(
@@ -75,18 +76,8 @@ if __name__ == '__main__':
         range0 = map_yaw(yaw)
         range1 = map_pitch(pitch)
 
-        if range0 > 180:
-            range0 = 180
-        elif range0 < 0:
-            range0 = 0
-
-        if range1 > 165:
-            range1 = 165
-        elif range1 < 15:
-            range1 = 15
-
         print("Servo 0 set to {}, servo 1 set to {}".format(range0, range1))
-        move(1, range0)
-        move(2, range1)
+        po.set_target(servo, 0, range0)
+        po.set_target(servo, 1, range1)
 
         sleep(0.05)
