@@ -44,14 +44,14 @@ from numpy import interp
 
 if __name__ == '__main__':
     hmd = oculus()
-    servo = po.open_serial(COUNT)
+    servo = po.open_serial()
 
     pitch_domain = [-0.3, 0.7]
     yaw_domain = [-0.7, 0.7]
     pitch_range = [0, 180]
     yaw_range = [15, 165]
 
-    map_pitch = lambda x: int(interp(-1 *x, pitch_domain, pitch_range))
+    map_pitch = lambda x: int(interp(x, pitch_domain, pitch_range))
     map_yaw = lambda x: int(interp(x, yaw_domain, yaw_range))
 
     range0 = 90

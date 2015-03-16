@@ -17,11 +17,11 @@ BOUNDS = [(20, 160) for _ in range(COUNT)]
 PORT = 0
 TTY_STR = '/dev/ttyACM' + str(PORT)
 
-def open_serial(ranges, tty_string=TTY_STR, count=COUNT):
+def open_serial(ranges=RANGES, tty_string=TTY_STR, count=COUNT):
     usb =serial.Serial(tty_string)
 
     for index, _ in enumerate(RANGES):
-        set_target(usb, index, transform(90))
+        set_target(usb, index, 90)
 
     return usb
 
@@ -55,7 +55,7 @@ def key_driver(servo):
             RANGES[1] += -1*inc
 
         for index, target in enumerate(RANGES):
-            set_target(servo, index, transform(target))
+            set_target(servo, index, target)
 
         servo_str = ""
         for idx, target in enumerate(RANGES):
@@ -73,6 +73,7 @@ def constrain_ranges():
 def set_target(controller, channel, target):
     """Set servo target angles, within pre-set bounds"""
     constrain_ranges()
+    target = transform(target)
     lsb = target & 0x7f #7 bits for least significant byte
     msb = (target >> 7) & 0x7f #shift 7 and take next 7 bits for msb
     cmd = chr(0x84) + chr(channel) + chr(lsb) + chr(msb)
