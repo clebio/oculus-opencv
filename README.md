@@ -7,6 +7,8 @@ cameras are not connected, the program will exit noting that. Any regular USB
 webcam should do, I suppose, though I'm using analog [video capture
 devices][diamond].
 
+### OS-level prerequisites
+
 This code was developed and tested only on **Kubuntu 14.10** using **OpenCV
 2.4.9**; I welcome pull requests if you find changes needed to support Windows
 or other platforms. Getting Python-OpenCV set up properly on a new machine is
@@ -14,6 +16,23 @@ quite non-trivial. The best stand-alone reference I've found so far is
 Sebastian Montabone's [blog post on the topic][samontab]. You should certainly
 install `ffmpeg` from source. Note that on Ubuntu 14.10, you can use `libtiff5`
 rather than `libtiff4`.
+
+You'll need `python-qt4`, since `PyQt4` is strangely [not installable via
+pip][pip-pyqt], despite [being on PyPI][pypi-pyqt].
+
+### UDEV rules
+
+To access the Oculus hardware's device in user-space, you'll need to
+add a udev rule. In `/etc/udev/rules.d/` add a file (say,
+`83-hmd.rules`) containing the single line:
+
+    SUBSYSTEM=="usb", ATTR{idVendor}=="2833", MODE="0666", GROUP="plugdev"
+
+Then, as root, run
+
+    udevadm control --reload-rules
+
+### Python libraries
 
 We don't directly depend on the Oculus SDK, but rather use the `python-ovrsdk`
 package (which is on [PyPI][pip-ovrsdk] and [github][git-ovrsdk]). I looked
@@ -27,9 +46,6 @@ Some dependencies are not available via `pip`, so you'll need various system
 packages. I've tried to document this as I go, but it can be hard to separate
 out from other, unrelated installs. Again, I welcome pull requests (or issues)
 if you find mistakes.
-
-You'll need `python-qt4`, since `PyQt4` is strangely [not installable via
-pip][pip-pyqt], despite [being on PyPI][pypi-pyqt].
 
 By far the trickiest part of set up is OpenCV. I found it's possible to
 successfully build OpenCV via `cmake`/`make`, and yet not have some of the
