@@ -20,17 +20,11 @@ rather than `libtiff4`.
 You'll need `python-qt4`, since `PyQt4` is strangely [not installable via
 pip][pip-pyqt], despite [being on PyPI][pypi-pyqt].
 
-### UDEV rules
+### Hardware setup
 
-To access the Oculus hardware's device in user-space, you'll need to
-add a udev rule. In `/etc/udev/rules.d/` add a file (say,
-`83-hmd.rules`) containing the single line:
-
-    SUBSYSTEM=="usb", ATTR{idVendor}=="2833", MODE="0666", GROUP="plugdev"
-
-Then, as root, run
-
-    udevadm control --reload-rules
+To access the Oculus hardware's device in user-space, you should
+download the [Oculus SDK for Linux][sdk_download] and run the
+`ConfigureDebian.sh` script.
 
 ### Python libraries
 
@@ -130,6 +124,7 @@ HDMI) only further stymies a good machine. Good luck!
 
 
 [rift]: https://www.oculus.com/rift/
+[sdk_download]: https://developer.oculus.com/downloads/
 [diamond]: http://www.amazon.com/dp/B000VM60I8
 [samontab]: http://www.samontab.com/web/2014/06/installing-opencv-2-4-9-in-ubuntu-14-04-lts/
 [git-ovrsdk]: https://github.com/wwwtyro/python-ovrsdk
