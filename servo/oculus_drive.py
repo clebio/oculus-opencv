@@ -2,6 +2,8 @@ import ovrsdk as ovr
 from time import sleep
 #from servo import move
 import pololu as po
+from getch import getch
+from numpy import interp
 
 def oculus():
     """initializes ovrsdk and starts tracking oculus"""
@@ -39,8 +41,10 @@ def oculus():
 
     return hmd
 
-from getch import getch
-from numpy import interp
+def go_home(controller):
+    """Move servos to home position"""
+    cmd = chr(0x84) + chr(0xA2)
+    controller.write(cmd)
 
 if __name__ == '__main__':
     hmd = oculus()
@@ -61,6 +65,12 @@ if __name__ == '__main__':
     po.set_target(servo, 1, range1)
 
     while True:
+        keypress = getch.getch()
+        if keypress == 'q':
+            go_home(servo)
+            servo.close()
+            break
+
         state = ovr.ovrHmd_GetSensorState(
             hmd, ovr.ovr_GetTimeInSeconds()
         )
