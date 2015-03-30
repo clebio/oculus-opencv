@@ -8,6 +8,7 @@ Set servo ranges and establish serial connection.
 
 from getch import getch
 import serial
+import os
 
 COUNT = 2
 RANGES = [90 for _ in range(COUNT)]
@@ -15,7 +16,15 @@ BOUNDS = [(20, 160) for _ in range(COUNT)]
 
 
 PORT = 0
-TTY_STR = '/dev/ttyACM' + str(PORT)
+TTY_STR = '/dev/'
+
+USB_DEVS = [t for t in os.listdir('/dev/') if t.startswith('ttyUSB')]
+if USB_DEVS:
+    TTY_STR +=  USB_DEVS.pop()
+else:
+    TTY_STR += 'ttyACM0'
+
+print(TTY_STR)
 
 def open_serial(ranges=RANGES, tty_string=TTY_STR, count=COUNT):
     usb =serial.Serial(tty_string)
