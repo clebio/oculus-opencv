@@ -11,6 +11,9 @@ import os
 devices = os.listdir('/dev/')
 video_devices = [int(d[-1]) for d in devices if d.startswith('video')]
 
+if len(video_devices) > 2:
+    video_devices.pop()
+
 cv_cams = []
 for video in video_devices:
     cam = cv2.VideoCapture(video)
@@ -34,7 +37,7 @@ while(True):
                 cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB),
             )
 
-for video in video_devices:
-    video.release()
+for cam in cv_cams:
+    cam.release()
 
 cv2.destroyAllWindows()
