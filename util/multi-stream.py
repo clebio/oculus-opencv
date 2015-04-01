@@ -12,7 +12,7 @@ devices = os.listdir('/dev/')
 video_devices = [int(d[-1]) for d in devices if d.startswith('video')]
 
 if len(video_devices) > 2:
-    video_devices.pop(0)
+    video_devices.pop()
 
 cv_cams = []
 for video in video_devices:
