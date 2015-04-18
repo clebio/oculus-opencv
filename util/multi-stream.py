@@ -37,7 +37,7 @@ while(True):
                 cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB),
             )
 
-for cam in cv_cams:
-    cam.release()
+for video in video_devices:
+    video.release()
 
 cv2.destroyAllWindows()

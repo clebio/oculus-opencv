@@ -165,22 +165,42 @@ recommending only a Macbook Pro with the Nvidia 650M, which I believe
 is a few years old. That, though, was my baseline criteria for what to
 use.
 
-In developing this, I've found that two USB video streams is quite taxing on
-even a powerful computer. Each stream uses most of a USB bus' bandwidth. Try to
-isolate the two streams on separate USB/PCI channels -- that is, try different
-USB ports on your computer. Adding the Oculus (another USB device, as well as
-HDMI) only further stymies a good machine. Good luck!
+In developing this, I've found that two USB video streams is quite
+taxing on even a powerful computer. Each stream uses most of a USB
+bus' bandwidth. Try to isolate the two streams on separate USB/PCI
+channels -- that is, try different USB ports on your computer. Adding
+the Oculus (another USB device, as well as HDMI) only further stymies
+a good machine. Good luck!
 
-# Further work
+# Servo drive
 
-I am currently working on a [Pan-and-Tilt][pan_tilt] servo setup, on
-which the cameras are mounted. The two servos are driven by an Arduino
-using the [Servo library][servo]. From there, a simple Python script
-connects to the servos via [pySerial][pyserial]. In this way, the
-*pose* data from the Oculus drives the pan and tilt orientation. This
-component is nascent, but I will add more info soon.
+I use a [Pan-and-Tilt][pan_tilt] servo setup, and mount the cameras on
+them. The Oculus' orientation data (yaw and pitch, particularly --
+roll is not used) are taken as inputs and drive the servos. The servo
+control works with Arduino using the [Servo library][servo], and
+[Pololu maestro][maestro] (which I prefer since it's smaller). From
+there, a simple Python script connects to the servos via
+[pySerial][pyserial]. The file `servo/oculus-drive.py` demonstrates
+this arrangement (two servos, on channels 0 and 1).
 
 * udev rules for serial/tty
+
+For servo control over USB (e.g. wireless serial modem or connecting
+to the servo controller directly via the python script), you'll need
+to add your user to the `dialout` group:
+
+     sudo usermod -a -G dialout <you>
+
+For connecting to the Oculus' HMD device, you will want to use the
+UDEV rules from the OVR SDK:
+
+    cd ~/Downloads/ovr_sdk_linux_0.4.4/
+    cp LibOVR/90-oculus.rules /etc/udev/rules.d/
+    sudo udevadm control --reload # and log back in
+
+Note that you have to log out of (and back into) the desktop session
+for UDEV rules to take effect.
+
 
 [rift]: https://www.oculus.com/rift/
 [sdk_download]: https://developer.oculus.com/downloads/
@@ -196,3 +216,4 @@ component is nascent, but I will add more info soon.
 [pan_tilt]: https://www.sparkfun.com/products/10335
 [servo]: http://arduino.cc/en/reference/servo
 [pyserial]: http://pyserial.sourceforge.net/
+[maestro]: https://www.pololu.com/product/1350

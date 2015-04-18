@@ -2,6 +2,7 @@ import ovrsdk as ovr
 from time import sleep
 #from servo import move
 import pololu as po
+from numpy import interp
 
 def oculus():
     """initializes ovrsdk and starts tracking oculus"""
@@ -39,8 +40,10 @@ def oculus():
 
     return hmd
 
-from getch import getch
-from numpy import interp
+def go_home(controller):
+    """Move servos to home position"""
+    cmd = chr(0x84) + chr(0xA2)
+    controller.write(cmd)
 
 if __name__ == '__main__':
     hmd = oculus()
@@ -52,7 +55,7 @@ if __name__ == '__main__':
     yaw_range = [15, 165]
 
     map_pitch = lambda x: int(interp(x, pitch_domain, pitch_range))
-    map_yaw = lambda x: int(interp(x, yaw_domain, yaw_range))
+    map_yaw = lambda x: int(interp(-1.0*x, yaw_domain, yaw_range))
 
     range0 = 90
     range1 = 45

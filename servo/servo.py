@@ -23,10 +23,10 @@ import serial
 #     usbport = '/dev/ttyUSB0'
 #   MacOSX example
 #     usbport = '/dev/tty.usbserial-FTALLOK2'
-usbport = '/dev/ttyUSB0'
+usbport = '/dev/ttyACM0' #'/dev/ttyUSB0'
 
 # Set up serial baud rate
-ser = serial.Serial(usbport, 19200, timeout=1)
+ser = serial.Serial(usbport, 9600, timeout=1)
 
 def move(servo, angle):
     '''Moves the specified servo to the supplied angle.
@@ -39,11 +39,11 @@ def move(servo, angle):
 
     (e.g.) >>> servo.move(2, 90)
            ... # "move servo #2 to 90 degrees"'''
-    usbport = '/dev/ttyUSB0'
-    ser = serial.Serial(usbport, 19200, timeout=1)
+    usbport = '/dev/ttyACM0' #'/dev/ttyUSB0'
+    ser = serial.Serial(usbport, 9600, timeout=1)
 
     if (0 <= angle <= 180):
-        ser.write(chr(255))
+        ser.write(chr(0xAA))
         ser.write(chr(servo))
         ser.write(chr(angle))
     else:

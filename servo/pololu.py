@@ -59,6 +59,8 @@ def key_driver(servo):
     while True:
         keypress = getch.getch()
         if keypress == 'q':
+            go_home(servo)
+            servo.close()
             break
 
         if keypress == 'j':
@@ -93,6 +95,11 @@ def set_target(controller, channel, target):
     lsb = target & 0x7f #7 bits for least significant byte
     msb = (target >> 7) & 0x7f #shift 7 and take next 7 bits for msb
     cmd = chr(0x84) + chr(channel) + chr(lsb) + chr(msb)
+    controller.write(cmd)
+
+def go_home(controller):
+    """Move servos to home position"""
+    cmd = chr(0x84) + chr(0xA2)
     controller.write(cmd)
 
 if __name__ == '__main__':
