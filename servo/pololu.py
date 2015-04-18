@@ -8,17 +8,33 @@ Set servo ranges and establish serial connection.
 
 from getch import getch
 import serial
+import os
 
 COUNT = 2
 RANGES = [90 for _ in range(COUNT)]
 BOUNDS = [(20, 160) for _ in range(COUNT)]
 
 
+'''This attempts to account for using the Pololu directly, via USB,
+versus using it over a usb-to-serial breakout board (for use over a
+wireless modem). Note that you *also* need to use the Maestro Control
+Center to set the device to 'UART' mode (not USB, Dual). Otherwise,
+this control won't actuate the servos.
+'''
+if any('ACM' in t for t in os.listdir('/dev')):
+    DEVICE = 'ACM'
+elif any('USB' in t for t in os.listdir('/dev')):
+    DEVICE = 'USB'
+else:
+    raise Exception('No serial device found; is it plugged in?')
+
+
 PORT = 0
-TTY_STR = '/dev/ttyACM' + str(PORT)
+TTY_STR = '/dev/tty{}{}'.format(DEVICE, str(PORT))
+print(TTY_STR)
 
 def open_serial(ranges=RANGES, tty_string=TTY_STR, count=COUNT):
-    usb =serial.Serial(tty_string)
+    usb = serial.Serial(tty_string)
 
     for index, _ in enumerate(RANGES):
         set_target(usb, index, 90)
