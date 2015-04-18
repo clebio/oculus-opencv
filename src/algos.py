@@ -91,43 +91,53 @@ class Parameters():
     each parameter. This could be possibly more elegant, but it's
     simple and it works ok.
     """
-    #Matrix coefficients for left eye barrel effect
-    fxL = 350
-    fyL = 300
-    cxL = 310
-    cyL = 260
 
-    #Matrix coefficients for right eye barrel effect
-    fxR = fxL
-    fyR = fyL
-    cxR = cxL
-    cyR = cyL
-
-    #offset to align images
-    xL = 0
-    yL = 0
-    xR = -xL
-    yR = -yL
-
-    #offsets to translate image before distortion
-    xo = -80
-    yo = 20
-
-    #offsets to translate image after distortion
-    xo2 = -110
-    yo2 = 0
-
-    cropXL = 30
-    cropXR = 170
+    cropXL = 0
+    cropXR = 160
     cropYL = 0
-    cropYR = 80
-
-    # width, height, t = left_frame.shape
-    width = 720
-    height = 480
-
-    # frames per second
+    cropYR = 0
+    cxL = 330
+    cxR = 330
+    cyL = 250
+    cyR = 250
     fps = 15
+    fxL = 270
+    fxR = 270
+    fyL = 360
+    fyR = 360
+    height = 480
+    width = 720
+    xL = 0
+    xR = 0
+    xo = 20
+    xo2 = -90
+    yL = 0
+    yR = 0
+    yo = 0
+    yo2 = 30
+    qcropXL = 0
+    cropXR = 160
+    cropYL = 0
+    cropYR = 0
+    cxL = 330
+    cxR = 330
+    cyL = 250
+    cyR = 250
+    fps = 15
+    fxL = 270
+    fxR = 270
+    fyL = 360
+    fyR = 360
+    height = 480
+    width = 720
+    xL = 0
+    xR = 0
+    xo = 20
+    xo2 = -90
+    yL = 0
+    yR = 0
+    yo = 0
+    yo2 = 30
 
     key_mappings = dict(
         fxL=('f', 's'),
