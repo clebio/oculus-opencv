@@ -21,16 +21,8 @@ wireless modem). Note that you *also* need to use the Maestro Control
 Center to set the device to 'UART' mode (not USB, Dual). Otherwise,
 this control won't actuate the servos.
 '''
-if any('ACM' in t for t in os.listdir('/dev')):
-    DEVICE = 'ACM'
-elif any('USB' in t for t in os.listdir('/dev')):
-    DEVICE = 'USB'
-else:
-    raise Exception('No serial device found; is it plugged in?')
-
-
 PORT = 0
-TTY_STR = '/dev/tty{}{}'.format(DEVICE, str(PORT))
+TTY_STR = '/dev/ttyUSB{}'.format(str(PORT))
 print(TTY_STR)
 
 def open_serial(ranges=RANGES, tty_string=TTY_STR, count=COUNT):
