@@ -8,6 +8,65 @@ from gevent import Greenlet
 
 from algos import *
 
+import ovrsdk as ovr
+from time import sleep
+from numpy import interp
+import servo.pololu as po
+8
+
+class OculusDriver(Greenlet):
+    """Drive pan/tilt servos based on Oculus' orientation inputs"""
+    def __init__(self, hmd):
+        """Connect to the servo output and save HMD input"""
+        Greenlet.__init__(self)
+        self.servo = po.open_serial()
+        self.hmd = hmd
+
+    def kill(self):
+        """Subclass the gevent kill"""
+        self.go_home()
+        super(OculusDriver, self).kill()
+
+    def go_home(self):
+        """Move servos to home position"""
+        cmd = chr(0x84) + chr(0xA2)
+        self.servo.write(cmd)
+        
+    def _run(self):
+        """Interpolate orientation data and update servo positions"""
+        pitch_domain = [-0.3, 0.7]
+        yaw_domain = [-0.7, 0.7]
+        pitch_range = [0, 180]
+        yaw_range = [15, 165]
+
+        map_pitch = lambda x: int(interp(x, pitch_domain, pitch_range))
+        map_yaw = lambda x: int(interp(-1.0*x, yaw_domain, yaw_range))
+
+        range0 = 90
+        range1 = 45
+
+        po.set_target(self.servo, 1, range0)
+        po.set_target(self.servo, 1, range1)
+
+        while True:
+            state = ovr.ovrHmd_GetSensorState(
+                hmd, ovr.ovr_GetTimeInSeconds()
+            )
+            pose = state.Predicted.Pose
+
+            pitch = pose.Orientation.x # -0.3 ~ 0.7
+            #roll = pose.Orientation.z
+            yaw = pose.Orientation.y # -0.7 ~ 0.7
+
+            range0 = map_yaw(yaw)
+            range1 = map_pitch(pitch)
+
+            print("Servo 0 set to {}, servo 1 set to {}".format(range0, range1))
+            po.set_target(self.servo, 0, range0)
+            po.set_target(self.servo, 1, range1)
+
+            gevent.sleep(0)
+
 class CameraReader(Greenlet):
     """Read frames from a camera and apply distortions"""
     def __init__(self, camera, queue):
@@ -20,7 +79,7 @@ class CameraReader(Greenlet):
         """Iterate and process frames indefinitely
 
         Assumes the application will be shutdown through other means
-        (namely, the CameraProcessor greenlet, which handles user
+        (namely, the InputHandler greenlet, which handles user
         input).
 
         Reads a frame in from the camera, applies translations and

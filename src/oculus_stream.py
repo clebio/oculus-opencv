@@ -26,6 +26,7 @@ from camera import (
     CameraReader,
     CameraProcessor,
     InputHandler,
+    OculusDriver,
 )
 from arg_parser import parser
 
@@ -105,9 +106,16 @@ def run():
         args.write,
     )
 
+    driver = None
+    if args.oculus:
+        driver = OculusDriver(hmd)
+
     def close_callback():
         left.kill()
         right.kill()
+
+        if driver:
+            driver.kill()
 
         camera_left.release()
         camera_right.release()
@@ -122,10 +130,14 @@ def run():
 
     left.start()
     right.start()
+    if driver:
+        driver.start()
     processor.start()
     input_handler.start()
 
     gevent.signal(signal.SIGQUIT, gevent.kill)
+    if driver:
+        gevent.join(driver)
     gevent.joinall([left, right, processor, input_handler])
 
 if __name__ == '__main__':
