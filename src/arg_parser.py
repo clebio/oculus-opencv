@@ -39,3 +39,10 @@ parser.add_argument(
     default=15,
     type=float,
 )
+
+parser.add_argument(
+    '-I',
+    '--invert',
+    help='Invert servo rotations (for turning device upside-down)',
+    action='store_true',
+)

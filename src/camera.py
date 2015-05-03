@@ -17,15 +17,20 @@ import servo.pololu as po
 
 class OculusDriver(Greenlet):
     """Drive pan/tilt servos based on Oculus' orientation inputs"""
-    def __init__(self, hmd):
+    def __init__(self, hmd, invert=False):
         """Connect to the servo output and save HMD input"""
         Greenlet.__init__(self)
         self.servo = po.open_serial()
         self.hmd = hmd
+        self.invert = 1
+        if invert:
+            self.invert = -1
+
 
     def kill(self):
         """Subclass the gevent kill"""
         self.go_home()
+        self.servo.close()
         super(OculusDriver, self).kill()
 
     def go_home(self):
@@ -40,8 +45,18 @@ class OculusDriver(Greenlet):
         pitch_range = [0, 180]
         yaw_range = [15, 165]
 
-        map_pitch = lambda x: int(interp(x, pitch_domain, pitch_range))
-        map_yaw = lambda x: int(interp(-1.0*x, yaw_domain, yaw_range))
+        pitch_inversion = 1 * self.invert
+        yaw_inversion = -1 * self.invert
+        map_pitch = lambda x: int(interp(
+            pitch_inversion * x,
+            pitch_domain,
+            pitch_range)
+        )
+        map_yaw = lambda x: int(interp(
+            yaw_inversion * x,
+            yaw_domain,
+            yaw_range)
+        )
 
         range0 = 90
         range1 = 45
@@ -66,7 +81,7 @@ class OculusDriver(Greenlet):
             po.set_target(self.servo, 0, range0)
             po.set_target(self.servo, 1, range1)
 
-            gevent.sleep(0.05)
+            gevent.sleep(0)
 
 class CameraReader(Greenlet):
     """Read frames from a camera and apply distortions"""

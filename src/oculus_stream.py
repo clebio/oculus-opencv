@@ -107,7 +107,7 @@ def run():
     )
 
     if args.oculus:
-        driver = OculusDriver(hmd)
+        driver = OculusDriver(hmd, invert=args.invert)
     else:
         driver = None
 
