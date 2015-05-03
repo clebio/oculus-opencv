@@ -158,7 +158,7 @@ Video transmit/receive | [5.8 GHz A/V tx/rx set][avtxrx] | 2
 Computer processing | Anything with discrete graphics* | 1
 Pan/tilt bracket | [Pan/Tilt bracket][sparkfun_pantilt] | 1
 Servos | [Micro][sparkfun_micro] or [sub-micro servos][sparkfun_submicro] | 2
-Servo Controller | [Pololu micro Maestro][maestr] | 1
+Servo Controller | [Pololu micro Maestro][maestro] | 1
 Batteries | 1s or 3s [LiPo Batteries][lipo] or [regular AA/AAA][4aa] | 1+
 
 *I initially developed this on a desktop computer with a Radeon
