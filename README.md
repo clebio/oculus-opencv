@@ -156,6 +156,10 @@ Video camera | [CMOS Camera][cmoscam] | 2
 Video Capture | [Diamond VC500][diamond] | 2
 Video transmit/receive | [5.8 GHz A/V tx/rx set][avtxrx] | 2
 Computer processing | Anything with discrete graphics* | 1
+Pan/tilt bracket | [Pan/Tilt bracket][sparkfun_pantilt] | 1
+Servos | [Micro][sparkfun_micro] or [sub-micro servos][sparkfun_submicro] | 2
+Servo Controller | [Pololu micro Maestro][maestr] | 1
+Batteries | 1s or 3s [LiPo Batteries][lipo] or [regular AA/AAA][4aa] | 1+
 
 *I initially developed this on a desktop computer with a Radeon
 6700-series graphics card. Since I want to take this to the (RC
@@ -180,7 +184,7 @@ roll is not used) are taken as inputs and drive the servos. The servo
 control works with Arduino using the [Servo library][servo], and
 [Pololu maestro][maestro] (which I prefer since it's smaller). From
 there, a simple Python script connects to the servos via
-[pySerial][pyserial]. The file `servo/oculus-drive.py` demonstrates
+[pySerial][pyserial]. The file `src/servo/oculus-drive.py` demonstrates
 this arrangement (two servos, on channels 0 and 1).
 
 * udev rules for serial/tty
@@ -217,3 +221,8 @@ for UDEV rules to take effect.
 [servo]: http://arduino.cc/en/reference/servo
 [pyserial]: http://pyserial.sourceforge.net/
 [maestro]: https://www.pololu.com/product/1350
+[sparkfun_micro]: https://www.sparkfun.com/products/10333
+[sparkfun_submicro]: https://www.sparkfun.com/products/9065
+[sparkfun_pantilt]: https://www.sparkfun.com/products/10335
+[lipo]: http://www.hobbytown.com/Shop/EFLB5001S25-E-Flite-500mAh-1S-3-7V-25C-LiPo-Battery/
+[4aa]: http://www.radioshack.com/radioshack-4-aa-battery-holder/2700383.html#.VUa09eRgsUE
