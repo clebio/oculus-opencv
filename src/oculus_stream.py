@@ -106,15 +106,16 @@ def run():
         args.write,
     )
 
-    driver = None
     if args.oculus:
         driver = OculusDriver(hmd)
+    else:
+        driver = None
 
     def close_callback():
         left.kill()
         right.kill()
 
-        if driver:
+        if args.oculus:
             driver.kill()
 
         camera_left.release()
@@ -130,15 +131,16 @@ def run():
 
     left.start()
     right.start()
-    if driver:
+    if args.oculus:
         driver.start()
     processor.start()
     input_handler.start()
 
     gevent.signal(signal.SIGQUIT, gevent.kill)
-    if driver:
-        gevent.join(driver)
-    gevent.joinall([left, right, processor, input_handler])
+    if args.oculus:
+        gevent.joinall([left, right, processor, input_handler, driver])
+    else:
+        gevent.joinall([left, right, processor, input_handler])
 
 if __name__ == '__main__':
     run()

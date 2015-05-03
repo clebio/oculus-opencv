@@ -5,6 +5,7 @@ Camera Reader and Processor classes, based on Gevent's Greenlets
 
 import gevent
 from gevent import Greenlet
+from gevent.queue import Empty
 
 from algos import *
 
@@ -12,7 +13,7 @@ import ovrsdk as ovr
 from time import sleep
 from numpy import interp
 import servo.pololu as po
-8
+
 
 class OculusDriver(Greenlet):
     """Drive pan/tilt servos based on Oculus' orientation inputs"""
@@ -31,7 +32,7 @@ class OculusDriver(Greenlet):
         """Move servos to home position"""
         cmd = chr(0x84) + chr(0xA2)
         self.servo.write(cmd)
-        
+
     def _run(self):
         """Interpolate orientation data and update servo positions"""
         pitch_domain = [-0.3, 0.7]
@@ -50,7 +51,7 @@ class OculusDriver(Greenlet):
 
         while True:
             state = ovr.ovrHmd_GetSensorState(
-                hmd, ovr.ovr_GetTimeInSeconds()
+                self.hmd, ovr.ovr_GetTimeInSeconds()
             )
             pose = state.Predicted.Pose
 
@@ -61,11 +62,11 @@ class OculusDriver(Greenlet):
             range0 = map_yaw(yaw)
             range1 = map_pitch(pitch)
 
-            print("Servo 0 set to {}, servo 1 set to {}".format(range0, range1))
+            #print("Servo 0 set to {}, servo 1 set to {}".format(range0, range1))
             po.set_target(self.servo, 0, range0)
             po.set_target(self.servo, 1, range1)
 
-            gevent.sleep(0)
+            gevent.sleep(0.05)
 
 class CameraReader(Greenlet):
     """Read frames from a camera and apply distortions"""
@@ -156,10 +157,14 @@ class CameraProcessor(Greenlet):
         the composited image, then display to the user. Also handles
         user input.
         """
+        frame_left = frame_right = None
         if not (self.left.empty() and self.right.empty()):
+            frame_left = self.left.get_nowait()
+            frame_right = self.right.get_nowait()
+
             composite_frame = join_images(
-                self.left.get(),
-                self.right.get(),
+                frame_left,
+                frame_right,
             )
             cv2.imshow('vid', composite_frame)
 
